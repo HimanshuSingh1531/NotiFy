@@ -10,6 +10,66 @@ class AuthViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
+    // 🔥 NEW FUNCTION ADDED (GOOGLE AUTO CREATE USER)
+    fun createGoogleUserIfNotExists(
+        onComplete: () -> Unit
+    ) {
+        val user = auth.currentUser ?: return
+        val uid = user.uid
+
+        db.collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { doc ->
+
+                val fullName = user.displayName ?: ""
+                val parts = fullName.trim().split(" ")
+
+                val first = parts.firstOrNull() ?: ""
+                val last = if (parts.size > 1)
+                    parts.drop(1).joinToString(" ")
+                else ""
+
+                // 🔥 If document does not exist → create
+                if (!doc.exists()) {
+
+                    val userMap = hashMapOf(
+                        "firstName" to first,
+                        "surname" to last,
+                        "email" to (user.email ?: ""),
+                        "phone" to "",
+                        "bio" to "",
+                        "followers" to 0,
+                        "following" to 0
+                    )
+
+                    db.collection("users")
+                        .document(uid)
+                        .set(userMap)
+                        .addOnSuccessListener { onComplete() }
+
+                }
+                // 🔥 If document exists but name missing → update safely
+                else if (!doc.contains("firstName")) {
+
+                    val updateMap = hashMapOf(
+                        "firstName" to first,
+                        "surname" to last,
+                        "email" to (user.email ?: "")
+                    )
+
+                    db.collection("users")
+                        .document(uid)
+                        .set(updateMap, SetOptions.merge())
+                        .addOnSuccessListener { onComplete() }
+
+                }
+                else {
+                    onComplete()
+                }
+            }
+    }
+
     fun login(
         email: String,
         password: String,

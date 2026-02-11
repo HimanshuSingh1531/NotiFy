@@ -25,15 +25,16 @@ fun LoginScreen(
     authViewModel: AuthViewModel,
     onGoogleClick: () -> Unit,
     onSignupClick: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    isLoading: Boolean // 👈 ADDED (only addition in function)
 ) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) } // 👁️ ADDED
+    var passwordVisible by remember { mutableStateOf(false) }
 
-    val fieldShape = RoundedCornerShape(14.dp) // 🔥 SAME CURVE STYLE
+    val fieldShape = RoundedCornerShape(14.dp)
 
     Box(
         modifier = Modifier
@@ -92,7 +93,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-                // 📧 EMAIL (CURVED)
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -110,7 +110,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                // 🔒 PASSWORD (CURVED + 👁️)
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -142,7 +141,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // 🔘 LOGIN BUTTON (already curved)
                 Button(
                     onClick = {
                         authViewModel.login(email, password, onLoginSuccess) {
@@ -167,7 +165,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                // 🆕 SIGNUP (CURVED PILL STYLE)
                 OutlinedButton(
                     onClick = onSignupClick,
                     modifier = Modifier
@@ -187,7 +184,6 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // 🔘 GOOGLE (already perfect)
                 OutlinedButton(
                     onClick = onGoogleClick,
                     modifier = Modifier
@@ -196,6 +192,53 @@ fun LoginScreen(
                     shape = fieldShape
                 ) {
                     Text("Continue with Google")
+                }
+            }
+        }
+
+        // 🔥 SAME SIGNUP STYLE LOADER (ADDED ONLY THIS BLOCK)
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                    Box(contentAlignment = Alignment.Center) {
+
+                        CircularProgressIndicator(
+                            color = Color.White.copy(alpha = 0.85f),
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(64.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF7B61FF), Color(0xFF4DA3FF))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "N",
+                                fontSize = 30.sp,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        "Please wait...",
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
                 }
             }
         }

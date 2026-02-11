@@ -208,31 +208,41 @@ fun SignupScreen(
                     .background(Color.Black.copy(alpha = 0.35f)),
                 contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                    CircularProgressIndicator(
-                        color = Color.White.copy(alpha = 0.85f), // 👈 thin white ring
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(64.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
 
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFF7B61FF), Color(0xFF4DA3FF))
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "N",
-                            fontSize = 30.sp,
-                            color = Color.White
+                        CircularProgressIndicator(
+                            color = Color.White.copy(alpha = 0.85f),
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(64.dp)
                         )
+
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF7B61FF), Color(0xFF4DA3FF))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "N",
+                                fontSize = 30.sp,
+                                color = Color.White
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        "Please wait...",
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
                 }
             }
         }
