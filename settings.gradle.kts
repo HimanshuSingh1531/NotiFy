@@ -11,14 +11,17 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+
+        // ✅ REQUIRED FOR UCROP
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
 rootProject.name = "NotiFy"
 include(":app")
- 

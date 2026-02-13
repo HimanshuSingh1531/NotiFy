@@ -1,15 +1,31 @@
 package com.example.notify.profile
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.TimeUnit
 
+// 🔥 REMOVED FirebaseStorage
+// import com.google.firebase.storage.FirebaseStorage
+
+// 🔥 NEW IMPORTS ADDED (Cloudinary)
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import kotlinx.coroutines.launch
+import java.io.File
+import com.example.notify.network.RetrofitInstance
+
 class ProfileViewModel : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+
+    // ❌ REMOVED STORAGE INSTANCE
+    // private val storage = FirebaseStorage.getInstance()
 
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
@@ -28,7 +44,7 @@ class ProfileViewModel : ViewModel() {
             }
     }
 
-    // 🔥 NEW FUNCTION ADDED (USERNAME EXIST CHECK — SAME USER ALLOWED)
+    // 🔥 USERNAME EXIST CHECK — SAME USER ALLOWED
     fun checkUsernameAvailability(
         username: String,
         onResult: (Boolean) -> Unit
@@ -43,7 +59,6 @@ class ProfileViewModel : ViewModel() {
                 if (query.isEmpty) {
                     onResult(true)
                 } else {
-                    // allow if same user
                     val sameUser = query.documents.any { it.id == currentUid }
                     onResult(sameUser)
                 }
@@ -63,6 +78,11 @@ class ProfileViewModel : ViewModel() {
         onError: (String) -> Unit
     ) {
         val uid = getCurrentUserId() ?: return
+
+        if (!username.startsWith("@")) {
+            onError("Username must start with @")
+            return
+        }
 
         db.collection("users")
             .document(uid)
@@ -105,5 +125,67 @@ class ProfileViewModel : ViewModel() {
                         onError("Failed to update profile")
                     }
             }
+            .addOnFailureListener {
+                onError("Failed to load user data")
+            }
+    }
+
+    // 🔥🔥🔥 CLOUDINARY PROFILE IMAGE UPLOAD (FREE)
+    fun uploadProfileImage(
+        file: File,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+
+        val requestFile =
+            file.asRequestBody("image/*".toMediaTypeOrNull())
+
+        val body =
+            MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        val preset =
+            "notify_profile".toRequestBody("text/plain".toMediaTypeOrNull())
+
+        viewModelScope.launch {
+
+            try {
+
+                val response =
+                    RetrofitInstance.api.uploadImage(body, preset)
+
+                if (response.isSuccessful) {
+
+                    val imageUrl =
+                        response.body()?.secure_url ?: ""
+
+                    if (imageUrl.isNotEmpty()) {
+
+                        val uid = getCurrentUserId() ?: return@launch
+
+                        db.collection("users")
+                            .document(uid)
+                            .update("photoUrl", imageUrl)
+                            .addOnSuccessListener { onSuccess() }
+                            .addOnFailureListener {
+                                onError("Failed to save image URL")
+                            }
+                    }
+
+                } else {
+                    onError("Image upload failed")
+                }
+
+            } catch (e: Exception) {
+                onError(e.message ?: "Upload error")
+            }
+        }
+    }
+
+    // 🔥🔥🔥 NEW FUNCTION ADDED — LOGOUT
+    fun logout(
+        onSuccess: () -> Unit
+    ) {
+        auth.signOut()
+        onSuccess()
     }
 }

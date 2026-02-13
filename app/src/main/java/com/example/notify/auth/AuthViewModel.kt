@@ -5,7 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 
-class AuthViewModel : ViewModel() {
+class  AuthViewModel : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
@@ -30,7 +30,6 @@ class AuthViewModel : ViewModel() {
                     parts.drop(1).joinToString(" ")
                 else ""
 
-                // 🔥 If document does not exist → create
                 if (!doc.exists()) {
 
                     val userMap = hashMapOf(
@@ -49,7 +48,6 @@ class AuthViewModel : ViewModel() {
                         .addOnSuccessListener { onComplete() }
 
                 }
-                // 🔥 If document exists but name missing → update safely
                 else if (!doc.contains("firstName")) {
 
                     val updateMap = hashMapOf(
@@ -116,7 +114,6 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    // 🔍 CHECK: EXISTING USER HAS USERNAME?
     fun checkIfUsernameExists(
         onResult: (Boolean) -> Unit
     ) {
@@ -133,7 +130,6 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    // 🔍 CHECK: USERNAME UNIQUE?
     fun isUsernameAvailable(
         username: String,
         onResult: (Boolean) -> Unit
@@ -149,7 +145,6 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    // 💾 SAVE USERNAME  ✅ FIXED
     fun saveUsername(
         username: String,
         onSuccess: () -> Unit,
@@ -168,5 +163,10 @@ class AuthViewModel : ViewModel() {
             .addOnFailureListener {
                 onError("Failed to save username")
             }
+    }
+
+    // 🔥🔥🔥 LOGOUT FUNCTION ADDED (NO LINE REMOVED)
+    fun logout() {
+        auth.signOut()
     }
 }

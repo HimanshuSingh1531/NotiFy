@@ -1,20 +1,36 @@
 package com.example.notify.profile
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import java.io.File
+import java.io.FileOutputStream
+import com.yalantis.ucrop.UCrop
 
 @Composable
 fun EditProfileScreen(
     profileViewModel: ProfileViewModel,
     onSave: () -> Unit
 ) {
+
+    val context = LocalContext.current
 
     var firstName by remember { mutableStateOf("") }
     var surname by remember { mutableStateOf("") }
@@ -23,9 +39,41 @@ fun EditProfileScreen(
     var bio by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
 
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var existingPhotoUrl by remember { mutableStateOf("") }
+
+    // 🔥 CROP RESULT LAUNCHER
+    val cropLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+
+        if (result.resultCode == Activity.RESULT_OK) {
+            val resultUri = UCrop.getOutput(result.data!!)
+            selectedImageUri = resultUri
+        }
+    }
+
+    // 🔥 IMAGE PICKER (NOW STARTS UCROP)
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+
+        uri?.let {
+
+            val destinationUri = Uri.fromFile(
+                File(context.cacheDir, "cropped_image.jpg")
+            )
+
+            val uCrop = UCrop.of(it, destinationUri)
+                .withAspectRatio(1f, 1f)
+                .withMaxResultSize(600, 600)
+
+            cropLauncher.launch(uCrop.getIntent(context))
+        }
+    }
+
     val fieldShape = RoundedCornerShape(14.dp)
 
-    // 🔥 Load existing data
     LaunchedEffect(Unit) {
         profileViewModel.loadUserData {
             firstName = it["firstName"] as? String ?: ""
@@ -33,6 +81,7 @@ fun EditProfileScreen(
             username = it["username"] as? String ?: ""
             phone = it["phone"] as? String ?: ""
             bio = it["bio"] as? String ?: ""
+            existingPhotoUrl = it["photoUrl"] as? String ?: ""
         }
     }
 
@@ -57,6 +106,44 @@ fun EditProfileScreen(
                 color = Color.White,
                 fontSize = 22.sp
             )
+
+            Spacer(Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(110.dp)
+                    .clip(CircleShape)
+                    .background(Color.DarkGray)
+                    .clickable {
+                        imagePickerLauncher.launch("image/*")
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+
+                when {
+                    selectedImageUri != null -> {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    existingPhotoUrl.isNotEmpty() -> {
+                        AsyncImage(
+                            model = existingPhotoUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    else -> {
+                        Text(
+                            firstName.firstOrNull()?.toString() ?: "N",
+                            color = Color.White,
+                            fontSize = 30.sp
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 
@@ -123,34 +210,45 @@ fun EditProfileScreen(
             Button(
                 onClick = {
 
-                    // ✅ MUST START WITH @
                     if (!username.startsWith("@")) {
                         error = "Username must start with @"
                         return@Button
                     }
 
-                    // 🔥 NEW: CHECK IF USERNAME ALREADY EXISTS
                     profileViewModel.checkUsernameAvailability(
-                        username = username,
-                        onResult = { available ->
+                        username = username
+                    ) { available ->
 
-                            if (!available) {
-                                error = "Username already exists"
-                                return@checkUsernameAvailability
-                            }
-
-                            // ✅ If available → update
-                            profileViewModel.updateProfile(
-                                firstName = firstName,
-                                surname = surname,
-                                bio = bio,
-                                phone = phone,
-                                username = username,
-                                onSuccess = { onSave() },
-                                onError = { error = it }
-                            )
+                        if (!available) {
+                            error = "Username already exists"
+                            return@checkUsernameAvailability
                         }
-                    )
+
+                        profileViewModel.updateProfile(
+                            firstName = firstName,
+                            surname = surname,
+                            bio = bio,
+                            phone = phone,
+                            username = username,
+                            onSuccess = {
+
+                                selectedImageUri?.let { uri ->
+
+                                    val file = uriToFile(context, uri)
+
+                                    profileViewModel.uploadProfileImage(
+                                        file = file,
+                                        onSuccess = { onSave() },
+                                        onError = { errorMsg ->
+                                            error = errorMsg
+                                        }
+                                    )
+
+                                } ?: onSave()
+                            },
+                            onError = { error = it }
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = fieldShape,
@@ -162,6 +260,16 @@ fun EditProfileScreen(
             }
         }
     }
+}
+
+private fun uriToFile(context: Context, uri: Uri): File {
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val file = File(context.cacheDir, "upload_image.jpg")
+    val outputStream = FileOutputStream(file)
+    inputStream?.copyTo(outputStream)
+    inputStream?.close()
+    outputStream.close()
+    return file
 }
 
 @Composable

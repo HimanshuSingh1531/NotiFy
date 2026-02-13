@@ -5,9 +5,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notify.auth.*
-import com.example.notify.profile.ProfileScreen
 import com.example.notify.profile.ProfileViewModel
-import com.example.notify.profile.EditProfileScreen   // ✅ ADDED
+import com.example.notify.profile.EditProfileScreen
 
 @Composable
 fun AppNavGraph(
@@ -24,9 +23,8 @@ fun AppNavGraph(
     val goToProfile = remember { mutableStateOf(false) }
     val isLoading = remember { mutableStateOf(false) }
 
-    val showEdit = remember { mutableStateOf(false) }   // ✅ ADDED
+    val showEdit = remember { mutableStateOf(false) }
 
-    // 🔥 Google login listener (FIXED PROPERLY)
     LaunchedEffect(googleLoginSuccess.value) {
         if (googleLoginSuccess.value) {
 
@@ -50,9 +48,9 @@ fun AppNavGraph(
         }
     }
 
-    BackHandler(enabled = showSignup.value || showUsername.value || showEdit.value) {  // ✅ MODIFIED
+    BackHandler(enabled = showSignup.value || showUsername.value || showEdit.value) {
         when {
-            showEdit.value -> showEdit.value = false     // ✅ ADDED
+            showEdit.value -> showEdit.value = false
             showUsername.value -> showUsername.value = false
             showSignup.value -> showSignup.value = false
         }
@@ -60,8 +58,7 @@ fun AppNavGraph(
 
     when {
 
-        // ✏ EDIT PROFILE SCREEN (NEW BLOCK)
-        showEdit.value -> {   // ✅ ADDED
+        showEdit.value -> {
             EditProfileScreen(
                 profileViewModel = profileViewModel,
                 onSave = {
@@ -70,17 +67,22 @@ fun AppNavGraph(
             )
         }
 
-        // 👤 PROFILE SCREEN
+        // 🔥 FIXED BLOCK (ONLY THIS MODIFIED)
         goToProfile.value -> {
-            ProfileScreen(
-                profileViewModel = profileViewModel,
-                onEditClick = {
-                    showEdit.value = true    // ✅ ADDED (THIS FIXES PENCIL)
+            MainScreen(
+                onLogout = {
+
+                    authViewModel.logout()
+                    googleAuthClient.signOut()
+
+                    goToProfile.value = false
+                    showEdit.value = false
+                    showSignup.value = false
+                    showUsername.value = false
                 }
             )
         }
 
-        // 🆕 USERNAME SCREEN
         showUsername.value -> {
             UsernameScreen(
                 authViewModel = authViewModel,
@@ -91,7 +93,6 @@ fun AppNavGraph(
             )
         }
 
-        // 📝 SIGNUP
         showSignup.value -> {
             SignupScreen(
                 authViewModel = authViewModel,
@@ -101,7 +102,6 @@ fun AppNavGraph(
             )
         }
 
-        // 🔐 LOGIN
         else -> {
             LoginScreen(
                 authViewModel = authViewModel,

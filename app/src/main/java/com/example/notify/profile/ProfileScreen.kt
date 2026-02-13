@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert // 🔥 ADDED
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -17,15 +18,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import coil.compose.AsyncImage
+
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onLogout: () -> Unit // 🔥 ADDED
 ) {
 
     var userData by remember { mutableStateOf<Map<String, Any>?>(null) }
     var bioState by remember { mutableStateOf("") }
     var phoneState by remember { mutableStateOf("") }
+
+    var showMenu by remember { mutableStateOf(false) } // 🔥 ADDED
 
     LaunchedEffect(Unit) {
         profileViewModel.loadUserData {
@@ -50,6 +56,8 @@ fun ProfileScreen(
     val username = userData?.get("username") as? String ?: ""
     val followers = userData?.get("followers") as? Long ?: 0
     val following = userData?.get("following") as? Long ?: 0
+
+    val photoUrl = userData?.get("photoUrl") as? String ?: ""
 
     var tempBio by remember { mutableStateOf("") }
     var tempPhone by remember { mutableStateOf("") }
@@ -82,8 +90,38 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                IconButton(onClick = onEditClick) {
-                    Icon(Icons.Default.Edit, null, tint = Color.White)
+                Row {
+                    IconButton(onClick = onEditClick) {
+                        Icon(Icons.Default.Edit, null, tint = Color.White)
+                    }
+
+                    // 🔥 THREE DOT MENU ADDED
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, null, tint = Color.White)
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "Logout",
+                                        color = Color.White
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    profileViewModel.logout {
+                                        onLogout()
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -100,11 +138,25 @@ fun ProfileScreen(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    firstName.firstOrNull()?.toString() ?: "N",
-                    fontSize = 36.sp,
-                    color = Color.White
-                )
+
+                if (photoUrl.isNotEmpty()) {
+
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+
+                } else {
+
+                    Text(
+                        firstName.firstOrNull()?.toString() ?: "N",
+                        fontSize = 36.sp,
+                        color = Color.White
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -124,7 +176,6 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // ✅ PHONE FIRST
             if (phoneState.isEmpty()) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -175,7 +226,6 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ✅ BIO SECOND
             if (bioState.isEmpty()) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
