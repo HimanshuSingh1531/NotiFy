@@ -25,6 +25,20 @@ import androidx.compose.ui.input.nestedscroll.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.fillMaxWidth
 
+// 🔥🔥🔥 NEW IMPORTS FOR RED DOT SYSTEM
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.CircleShape
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
+// 🔥🔥🔥 NEW IMPORTS FOR PROFILE NAVIGATION
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.notify.profile.UserProfileScreen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -37,6 +51,23 @@ fun MainScreen(
     var showEdit by remember { mutableStateOf(false) }
 
     var bottomBarVisible by remember { mutableStateOf(true) }
+
+    var hasNewNotification by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
+        if (currentUserId.isNotEmpty()) {
+            FirebaseFirestore.getInstance()
+                .collection("notifications")
+                .whereEqualTo("toUserId", currentUserId)
+                .whereEqualTo("seen", false)
+                .addSnapshotListener { snapshot, _ ->
+                    hasNewNotification = snapshot?.documents?.isNotEmpty() == true
+                }
+        }
+    }
 
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -78,8 +109,6 @@ fun MainScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(nestedScrollConnection),
-
-        // 🔥🔥🔥 THIS COMPLETELY REMOVES WHITE BACKGROUND
         containerColor = Color(0xFF0E0E13),
 
         bottomBar = {
@@ -98,7 +127,7 @@ fun MainScreen(
 
                 NavigationBar(
                     containerColor = Color(0xFF0E0E13),
-                    tonalElevation = 0.dp, // 🔥 remove extra elevation shadow
+                    tonalElevation = 0.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 6.dp, vertical = 12.dp)
@@ -113,17 +142,36 @@ fun MainScreen(
                         NavigationBarItem(
                             selected = currentRoute == item.route,
                             onClick = {
+
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.startDestinationId)
                                     launchSingleTop = true
                                 }
+
+                                if (item.route == "liked") {
+                                    hasNewNotification = false
+                                }
                             },
+
                             icon = {
-                                Icon(
-                                    item.icon,
-                                    contentDescription = item.label
-                                )
+                                Box {
+
+                                    Icon(
+                                        item.icon,
+                                        contentDescription = item.label
+                                    )
+
+                                    if (item.route == "liked" && hasNewNotification) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(Color.Red, CircleShape)
+                                                .align(Alignment.TopEnd)
+                                        )
+                                    }
+                                }
                             },
+
                             label = {
                                 Text(item.label)
                             },
@@ -148,7 +196,9 @@ fun MainScreen(
         ) {
 
             composable("home") {
-                HomeScreen()
+                HomeScreen(
+                    navController = navController   // 🔥 ADDED
+                )
             }
 
             composable("message") {
@@ -160,7 +210,7 @@ fun MainScreen(
             }
 
             composable("liked") {
-                LikedScreen()
+                LikedScreen(navController = navController)
             }
 
             composable("profile") {
@@ -172,6 +222,22 @@ fun MainScreen(
                     onLogout = {
                         onLogout()
                     }
+                )
+            }
+
+            // 🔥🔥🔥 NEW USER PROFILE ROUTE (INSTAGRAM STYLE)
+            composable(
+                route = "profile_view/{userId}",
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+
+                UserProfileScreen(
+                    userId = userId,
+                    navController = navController
                 )
             }
         }

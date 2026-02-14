@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
             }
 
         setContent {
+
             NotiFyTheme {
                 AppNavGraph(
                     googleAuthClient = googleAuthClient,

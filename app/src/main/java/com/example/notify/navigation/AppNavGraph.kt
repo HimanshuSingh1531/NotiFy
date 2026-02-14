@@ -67,7 +67,7 @@ fun AppNavGraph(
             )
         }
 
-        // 🔥 FIXED BLOCK (ONLY THIS MODIFIED)
+        // 🔥 MAIN APP BLOCK (Dark removed)
         goToProfile.value -> {
             MainScreen(
                 onLogout = {
