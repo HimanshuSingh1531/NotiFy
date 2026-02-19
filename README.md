@@ -1,11 +1,11 @@
-# 📢 Notify App
+# Notify App
 
 Notify is a simple Android application built using **Kotlin** and **Jetpack Compose**.  
 The app allows users to create and view posts in a clean and modern UI.
 
 ---
 
-## ✨ Features
+## Features
 
 - Text posts  
 - Image posts with caption  
@@ -16,7 +16,7 @@ The app allows users to create and view posts in a clean and modern UI.
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - Kotlin  
 - Jetpack Compose  
