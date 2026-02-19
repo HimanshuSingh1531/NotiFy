@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable // 🔥 ADDED
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
@@ -17,6 +18,8 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController // 🔥 ADDED
+import com.google.firebase.auth.FirebaseAuth
 
 import coil.compose.AsyncImage
 
@@ -24,7 +27,8 @@ import coil.compose.AsyncImage
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
     onEditClick: () -> Unit,
-    onLogout: () -> Unit // 🔥 ADDED
+    onLogout: () -> Unit, // 🔥 ADDED
+    navController: NavController // 🔥 ADDED
 ) {
 
     var userData by remember { mutableStateOf<Map<String, Any>?>(null) }
@@ -58,6 +62,7 @@ fun ProfileScreen(
     val following = userData?.get("following") as? Long ?: 0
 
     val photoUrl = userData?.get("photoUrl") as? String ?: ""
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var tempBio by remember { mutableStateOf("") }
     var tempPhone by remember { mutableStateOf("") }
@@ -95,7 +100,6 @@ fun ProfileScreen(
                         Icon(Icons.Default.Edit, null, tint = Color.White)
                     }
 
-                    // 🔥 THREE DOT MENU ADDED
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, null, tint = Color.White)
@@ -280,8 +284,28 @@ fun ProfileScreen(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(followers, "Followers")
-                StatItem(following, "Following")
+
+                // 🔥 FOLLOWERS CLICKABLE (ONLY ADDED)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        navController.navigate("follow_list/$currentUserId/followers")
+                    }
+                ) {
+                    Text("$followers", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Followers", color = Color.Gray)
+                }
+
+                // 🔥 FOLLOWING CLICKABLE (ONLY ADDED)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        navController.navigate("follow_list/$currentUserId/following")
+                    }
+                ) {
+                    Text("$following", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Following", color = Color.Gray)
+                }
             }
 
             Spacer(Modifier.height(24.dp))

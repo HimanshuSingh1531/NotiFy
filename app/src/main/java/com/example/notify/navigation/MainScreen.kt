@@ -14,6 +14,7 @@ import com.example.notify.home.HomeScreen
 import com.example.notify.message.MessageScreen
 import com.example.notify.post.PostScreen
 import com.example.notify.liked.LikedScreen
+//import com.example.notify.liked.CommentScreen
 
 // 🔥 NEW IMPORTS ADDED (NOT REMOVING ANYTHING)
 import androidx.compose.animation.*
@@ -37,7 +38,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 // 🔥🔥🔥 NEW IMPORTS FOR PROFILE NAVIGATION
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.notify.comment.CommentScreen
 import com.example.notify.profile.UserProfileScreen
+
+// 🔥🔥🔥 NEW IMPORT FOR FOLLOW LIST SCREEN (ADDED ONLY)
+import com.example.notify.profile.FollowListScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,7 +202,7 @@ fun MainScreen(
 
             composable("home") {
                 HomeScreen(
-                    navController = navController   // 🔥 ADDED
+                    navController = navController
                 )
             }
 
@@ -221,11 +226,12 @@ fun MainScreen(
                     },
                     onLogout = {
                         onLogout()
-                    }
+                    },
+                    navController = navController
                 )
             }
 
-            // 🔥🔥🔥 NEW USER PROFILE ROUTE (INSTAGRAM STYLE)
+            // 🔥 USER PROFILE ROUTE
             composable(
                 route = "profile_view/{userId}",
                 arguments = listOf(
@@ -237,6 +243,37 @@ fun MainScreen(
 
                 UserProfileScreen(
                     userId = userId,
+                    navController = navController
+                )
+            }
+
+            // 🔥🔥🔥 NEW FOLLOW LIST ROUTE (ADDED ONLY)
+            composable(
+                route = "follow_list/{userId}/{type}",
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("type") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                val type = backStackEntry.arguments?.getString("type") ?: ""
+
+                FollowListScreen(
+                    userId = userId,
+                    type = type,
+                    navController = navController
+                )
+            }
+            //
+            composable(
+                route = "comments/{postId}"
+            ) { backStackEntry ->
+
+                val postId = backStackEntry.arguments?.getString("postId") ?: ""
+
+                CommentScreen(
+                    postId = postId,
                     navController = navController
                 )
             }

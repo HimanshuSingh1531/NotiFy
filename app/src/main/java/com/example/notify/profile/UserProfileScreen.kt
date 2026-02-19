@@ -3,6 +3,7 @@ package com.example.notify.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable // 🔥 ADDED (DO NOT REMOVE)
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -54,7 +55,6 @@ fun UserProfileScreen(
                     followers = doc.getLong("followers") ?: 0
                     following = doc.getLong("following") ?: 0
 
-                    // 🔥 LOAD NEW FIELDS
                     firstName = doc.getString("firstName") ?: ""
                     surname = doc.getString("surname") ?: ""
                     bio = doc.getString("bio") ?: ""
@@ -109,7 +109,6 @@ fun UserProfileScreen(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 🔥 PROFILE IMAGE
         AsyncImage(
             model = photoUrl,
             contentDescription = null,
@@ -121,7 +120,6 @@ fun UserProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔥 REAL NAME (FIRST + SURNAME)
         if (firstName.isNotEmpty() || surname.isNotEmpty()) {
             Text(
                 text = "$firstName $surname",
@@ -134,7 +132,6 @@ fun UserProfileScreen(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 🔥 BIO
         if (bio.isNotEmpty()) {
             Text(
                 text = bio,
@@ -146,13 +143,18 @@ fun UserProfileScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 🔥 FOLLOWERS / FOLLOWING ROW
+        // 🔥 FOLLOWERS / FOLLOWING ROW (CLICKABLE ADDED ONLY)
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable {
+                    navController.navigate("follow_list/$userId/followers")
+                }
+            ) {
                 Text(
                     text = followers.toString(),
                     color = Color.White,
@@ -162,7 +164,12 @@ fun UserProfileScreen(
                 Text("Followers", color = Color.Gray)
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable {
+                    navController.navigate("follow_list/$userId/following")
+                }
+            ) {
                 Text(
                     text = following.toString(),
                     color = Color.White,
@@ -175,7 +182,6 @@ fun UserProfileScreen(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 🔥 FOLLOW BUTTON
         if (currentUserId != userId && currentUserId.isNotEmpty()) {
 
             Button(
