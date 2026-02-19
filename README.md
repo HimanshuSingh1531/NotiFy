@@ -25,7 +25,7 @@ The app allows users to create and view posts in a clean and modern UI.
 
 ---
 
-## 🚧 Status
+## Status
 
 Project is under development.  
 More features will be added soon....
